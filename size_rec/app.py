@@ -1,4 +1,5 @@
 import hashlib
+from contextlib import asynccontextmanager
 from uuid import uuid4
 
 import structlog
@@ -12,10 +13,24 @@ from size_rec.size_calculator import calculate_size_recommendation
 
 structlog.configure(processors=[structlog.processors.JSONRenderer()])
 
-app = FastAPI(title='WearOn Worker Size Recommendation API')
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    # Load once and keep warm in memory for low-latency /estimate-body requests.
+    get_mediapipe_service()
+    yield
 
-_mediapipe_service = MediaPipeService.get_instance()
+
+app = FastAPI(title='WearOn Worker Size Recommendation API', lifespan=lifespan)
+
+_mediapipe_service: MediaPipeService | None = None
 _redis_client = RedisHealthClient.from_env()
+
+
+def get_mediapipe_service() -> MediaPipeService:
+    global _mediapipe_service
+    if _mediapipe_service is None:
+        _mediapipe_service = MediaPipeService.get_instance()
+    return _mediapipe_service
 
 
 @app.post('/estimate-body', response_model=EstimateBodyResponse)
@@ -31,7 +46,7 @@ async def estimate_body(
 
     try:
         image_rgb = await download_and_prepare_image(str(payload.image_url), timeout_seconds=5.0)
-        landmarks = _mediapipe_service.extract_landmarks(image_rgb)
+        landmarks = get_mediapipe_service().extract_landmarks(image_rgb)
         response = calculate_size_recommendation(landmarks, payload.height_cm)
         log.info(
             'size_rec_request_succeeded',
@@ -52,7 +67,7 @@ async def estimate_body(
 
 @app.get('/health', response_model=HealthResponse)
 async def health() -> HealthResponse:
-    model_loaded = _mediapipe_service.is_loaded
+    model_loaded = get_mediapipe_service().is_loaded
     redis_connected = await _redis_client.ping()
     status = 'ok' if model_loaded and redis_connected else 'degraded'
 
@@ -61,4 +76,3 @@ async def health() -> HealthResponse:
         model_loaded=model_loaded,
         redis_connected=redis_connected,
     )
-
