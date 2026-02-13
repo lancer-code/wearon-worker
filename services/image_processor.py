@@ -10,11 +10,23 @@ MAX_IMAGE_DIMENSION = 1024
 JPEG_QUALITY = 85
 
 
+MAX_DOWNLOAD_SIZE_MB = 10
+
+
 async def download_image(url: str) -> bytes:
     """Download image from a signed URL."""
-    async with httpx.AsyncClient(timeout=30.0) as client:
+    async with httpx.AsyncClient(timeout=30.0, follow_redirects=False) as client:
         response = await client.get(url)
         response.raise_for_status()
+
+        content_type = response.headers.get('content-type', '').lower()
+        if not content_type.startswith('image/'):
+            raise ValueError(f'URL returned non-image content-type: {content_type}')
+
+        max_bytes = MAX_DOWNLOAD_SIZE_MB * 1024 * 1024
+        if len(response.content) > max_bytes:
+            raise ValueError(f'Image exceeds {MAX_DOWNLOAD_SIZE_MB}MB limit')
+
         return response.content
 
 

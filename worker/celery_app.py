@@ -11,7 +11,7 @@ celery_app = Celery(
 celery_app.conf.update(
     task_acks_late=True,
     task_reject_on_worker_lost=True,
-    task_time_limit=60,
+    task_time_limit=300,
     worker_concurrency=settings.worker_concurrency,
     worker_prefetch_multiplier=1,
     # Global OpenAI rate limit: 300 req/min

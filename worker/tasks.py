@@ -52,21 +52,23 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
 
         # 2. Download and resize images
         loop = asyncio.new_event_loop()
-        image_buffers: list[tuple[str, bytes]] = []
-        for i, url in enumerate(task.image_urls):
-            name = 'model' if i == 0 else f'image_{i}'
-            buf = loop.run_until_complete(download_and_resize(url, name))
-            image_buffers.append((f'{name}.jpg', buf))
+        try:
+            image_buffers: list[tuple[str, bytes]] = []
+            for i, url in enumerate(task.image_urls):
+                name = 'model' if i == 0 else f'image_{i}'
+                buf = loop.run_until_complete(download_and_resize(url, name))
+                image_buffers.append((f'{name}.jpg', buf))
 
-        # 3. Call OpenAI
-        result_bytes = loop.run_until_complete(
-            generate_tryon(
-                image_buffers=image_buffers,
-                prompt=task.prompt,
-                request_id=task.request_id,
+            # 3. Call OpenAI
+            result_bytes = loop.run_until_complete(
+                generate_tryon(
+                    image_buffers=image_buffers,
+                    prompt=task.prompt,
+                    request_id=task.request_id,
+                )
             )
-        )
-        loop.close()
+        finally:
+            loop.close()
 
         # 4. Upload result to Supabase Storage
         owner_id = _get_owner_id(task)
@@ -95,18 +97,19 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
     except OpenAIImageError as exc:
         log.warn('generation_failed', error=str(exc), moderation=exc.is_moderation_error)
 
-        error_msg = str(exc)
+        # Retry on rate limit (429) before refunding — avoids double-spend
+        if exc.status_code == 429 and self.request.retries < self.max_retries:
+            supabase.table(session_table).update(
+                {'status': 'queued', 'error_message': 'Rate limited, retrying...'}
+            ).eq('id', task.session_id).execute()
+            raise self.retry(countdown=10)
 
-        # Refund credit
+        # Final failure — refund and mark failed
         _refund_credit(task, log)
 
         supabase.table(session_table).update(
-            {'status': 'failed', 'error_message': error_msg}
+            {'status': 'failed', 'error_message': str(exc)}
         ).eq('id', task.session_id).execute()
-
-        # Only retry on rate limit (429)
-        if exc.status_code == 429 and self.request.retries < self.max_retries:
-            raise self.retry(countdown=10)
 
     except Exception as exc:
         log.exception('generation_error', error=str(exc))

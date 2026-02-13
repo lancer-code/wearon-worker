@@ -1,3 +1,4 @@
+import asyncio
 import base64
 
 import httpx
@@ -109,12 +110,16 @@ async def generate_tryon(
         except httpx.HTTPStatusError as exc:
             status = exc.response.status_code
             if status >= 500 and attempt < max_retries:
-                log.warn('openai_server_error', status=status, retrying=True)
+                delay = 2 ** attempt
+                log.warn('openai_server_error', status=status, retry_delay=delay)
+                await asyncio.sleep(delay)
                 continue
             raise OpenAIImageError(f'API error: {exc}', status)
         except Exception as exc:
             if attempt < max_retries:
-                log.warn('openai_error', error=str(exc), retrying=True)
+                delay = 2 ** attempt
+                log.warn('openai_error', error=str(exc), retry_delay=delay)
+                await asyncio.sleep(delay)
                 continue
             raise OpenAIImageError(f'Unexpected error: {exc}')
 

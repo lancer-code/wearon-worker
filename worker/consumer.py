@@ -1,5 +1,6 @@
 import json
 import os
+import time
 
 import redis
 import structlog
@@ -63,3 +64,4 @@ def run_consumer() -> None:
             break
         except Exception:
             logger.exception('consumer_error')
+            time.sleep(5)

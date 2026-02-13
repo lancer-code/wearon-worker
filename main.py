@@ -1,4 +1,3 @@
-import signal
 import subprocess
 import sys
 import threading
@@ -13,13 +12,6 @@ from worker.startup import cleanup_stuck_sessions
 
 setup_logging()
 logger = structlog.get_logger()
-
-_shutdown = threading.Event()
-
-
-def _signal_handler(sig: int, frame: object) -> None:
-    logger.info('shutdown_signal', signal=sig)
-    _shutdown.set()
 
 
 def start_celery_worker() -> subprocess.Popen:  # type: ignore[type-arg]
@@ -52,9 +44,6 @@ def start_fastapi() -> None:
 
 
 def main() -> None:
-    signal.signal(signal.SIGTERM, _signal_handler)
-    signal.signal(signal.SIGINT, _signal_handler)
-
     logger.info('worker_starting')
 
     # 1. Cleanup stuck sessions from previous runs
