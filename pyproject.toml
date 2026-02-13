@@ -1,28 +1,38 @@
 [project]
 name = "wearon-worker"
 version = "0.1.0"
-description = "WearOn Python worker (FastAPI + MediaPipe)"
+description = "WearOn worker — Redis consumer, Celery tasks, FastAPI size rec"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+  "celery[redis]>=5.4.0",
+  "redis>=5.2.0",
   "fastapi>=0.116.0",
-  "uvicorn>=0.35.0",
+  "uvicorn[standard]>=0.34.0",
   "pydantic>=2.10.0",
+  "pydantic-settings>=2.7.0",
+  "supabase>=2.13.0",
+  "openai>=1.68.0",
+  "Pillow>=11.0.0",
+  "mediapipe>=0.10.0",
   "httpx>=0.28.0",
-  "pillow>=11.0.0",
   "numpy>=2.1.0",
   "structlog>=24.4.0",
-  "redis>=6.0.0",
-  "mediapipe>=0.10.0",
-  "pytest>=8.3.0",
 ]
 
 [project.optional-dependencies]
 dev = [
+  "pytest>=8.3.0",
   "pytest-asyncio>=0.24.0",
 ]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]
+pythonpath = ["."]
 asyncio_mode = "auto"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+ignore_missing_imports = true
