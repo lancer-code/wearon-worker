@@ -1,8 +1,19 @@
-.PHONY: dev test
+.PHONY: dev test build up down logs
 
 dev:
-	uvicorn size_rec.app:app --host 0.0.0.0 --port 8000 --reload
+	docker compose up --build
+
+up:
+	docker compose up -d --build
+
+down:
+	docker compose down
+
+logs:
+	docker compose logs -f worker
 
 test:
-	pytest -q
+	python -m pytest tests/ -v
 
+build:
+	docker build -t wearon-worker .
