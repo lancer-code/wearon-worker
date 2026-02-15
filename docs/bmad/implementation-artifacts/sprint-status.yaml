@@ -41,15 +41,15 @@ story_location: "docs/bmad/implementation-artifacts"
 
 development_status:
   # Epic 1: Production Docker Compose Foundation
-  epic-1: in-progress
-  2-1-create-production-docker-compose-configuration: in-progress
-  2-2-add-service-restart-policies-and-resource-limits: in-progress
+  epic-1: done
+  2-1-create-production-docker-compose-configuration: done
+  2-2-add-service-restart-policies-and-resource-limits: done
   epic-1-retrospective: optional
 
   # Epic 2: Nginx Reverse Proxy & SSL
-  epic-2: in-progress
-  3-1-create-nginx-reverse-proxy-configuration: in-progress
-  3-2-set-up-lets-encrypt-ssl-with-auto-renewal: in-progress
+  epic-2: done
+  3-1-create-nginx-reverse-proxy-configuration: done
+  3-2-set-up-lets-encrypt-ssl-with-auto-renewal: done
   epic-2-retrospective: optional
 
   # Epic 3: Metrics & Monitoring
@@ -57,7 +57,7 @@ development_status:
   4-1-add-application-metrics-to-worker: review
   4-2-deploy-prometheus-and-celery-exporter: review
   4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: review
-  4-4-deploy-grafana-with-auto-provisioned-dashboards: ready-for-dev
+  4-4-deploy-grafana-with-auto-provisioned-dashboards: review
   epic-3-retrospective: optional
 
   # Epic 4: Alerting

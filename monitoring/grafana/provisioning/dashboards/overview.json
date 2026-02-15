@@ -1,0 +1,58 @@
+{
+  "dashboard": {
+    "title": "System Overview",
+    "uid": "system-overview",
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "Service Health",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 8, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "up",
+            "legendFormat": "{{job}}",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "Total Tasks Processed",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 8, "x": 8, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(celery_task_succeeded_total) + sum(celery_task_failed_total)",
+            "legendFormat": "Total Tasks",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "API Request Rate",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 8, "x": 16, "y": 0 },
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m]))",
+            "legendFormat": "Requests/s",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "Recent Logs",
+        "type": "logs",
+        "gridPos": { "h": 10, "w": 24, "x": 0, "y": 6 },
+        "targets": [
+          {
+            "expr": "{service=~\".+\"} | json",
+            "datasource": { "type": "loki", "uid": "loki" }
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 39
+  }
+}

@@ -1,0 +1,64 @@
+{
+  "dashboard": {
+    "title": "Celery Tasks",
+    "uid": "celery-tasks",
+    "timezone": "browser",
+    "refresh": "30s",
+    "panels": [
+      {
+        "title": "Task Success Rate",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 0, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(celery_task_succeeded_total[5m])",
+            "legendFormat": "Success/s",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "Task Failure Rate",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 6, "y": 0 },
+        "targets": [
+          {
+            "expr": "rate(celery_task_failed_total[5m])",
+            "legendFormat": "Failures/s",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "Queue Depth",
+        "type": "stat",
+        "gridPos": { "h": 6, "w": 6, "x": 12, "y": 0 },
+        "targets": [
+          {
+            "expr": "celery_queue_length",
+            "legendFormat": "Queue Length",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      },
+      {
+        "title": "Task Duration",
+        "type": "timeseries",
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 6 },
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, rate(celery_task_runtime_bucket[5m]))",
+            "legendFormat": "P95 Duration",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          },
+          {
+            "expr": "histogram_quantile(0.50, rate(celery_task_runtime_bucket[5m]))",
+            "legendFormat": "P50 Duration",
+            "datasource": { "type": "prometheus", "uid": "prometheus" }
+          }
+        ]
+      }
+    ],
+    "schemaVersion": 39
+  }
+}
