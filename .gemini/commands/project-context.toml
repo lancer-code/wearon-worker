@@ -1,0 +1,20 @@
+description = "Load the project context for the wearon-worker codebase"
+prompt = """
+Load the project context for the wearon-worker codebase. Read the following files in order to understand the project before doing any work:
+
+1. Read `CLAUDE.md` — project overview, architecture, conventions, commands, environment variables
+2. Read `docs/index.md` — master documentation index with navigation and key concepts
+3. Read `docs/architecture.md` — system context, component architecture, error handling, data flow
+4. Read `docs/api-contracts.md` — HTTP endpoints, Redis queue contract, Supabase integration
+5. Read `docs/data-models.md` — Pydantic models, validation rules
+6. Read `docs/source-tree-analysis.md` — annotated directory tree, critical folders
+
+After reading all files, provide a brief summary of the project context you now have. Include:
+- What this project does
+- The 3 services it runs
+- Key integration points (Redis queue, Supabase, OpenAI)
+- The B2B vs B2C channel distinction
+- Error handling strategy
+
+Then ask: "What would you like to work on?"
+"""
