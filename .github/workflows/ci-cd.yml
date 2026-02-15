@@ -183,11 +183,8 @@ jobs:
               docker compose -f docker-compose.prod.yml pull
             fi
 
-            # Remove containers no longer in compose file
-            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
-
             echo "Starting all services..."
-            timeout 120 docker compose -f docker-compose.prod.yml up -d --wait
+            timeout 120 docker compose -f docker-compose.prod.yml up -d --remove-orphans --wait
 
             # Health check
             sleep 5
