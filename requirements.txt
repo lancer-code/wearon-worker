@@ -24,6 +24,9 @@ httpx>=0.28.0
 # Numerical (MediaPipe)
 numpy>=2.1.0
 
+# Metrics
+prometheus-fastapi-instrumentator>=7.0.0
+
 # Logging
 structlog>=24.4.0
 

@@ -4,6 +4,7 @@ from uuid import uuid4
 
 import structlog
 from fastapi import FastAPI, Header, HTTPException
+from prometheus_fastapi_instrumentator import Instrumentator
 
 from models.size_rec import EstimateBodyRequest, EstimateBodyResponse, HealthResponse
 from services.redis_client import RedisHealthClient
@@ -21,6 +22,7 @@ async def lifespan(_app: FastAPI):
 
 
 app = FastAPI(title='WearOn Worker Size Recommendation API', lifespan=lifespan)
+Instrumentator().instrument(app).expose(app)
 
 _mediapipe_service: MediaPipeService | None = None
 _redis_client = RedisHealthClient.from_env()

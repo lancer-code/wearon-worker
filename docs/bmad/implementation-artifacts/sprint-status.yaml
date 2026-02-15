@@ -54,7 +54,7 @@ development_status:
 
   # Epic 3: Metrics & Monitoring
   epic-3: in-progress
-  4-1-add-application-metrics-to-worker: ready-for-dev
+  4-1-add-application-metrics-to-worker: review
   4-2-deploy-prometheus-and-celery-exporter: ready-for-dev
   4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: ready-for-dev
   4-4-deploy-grafana-with-auto-provisioned-dashboards: ready-for-dev
