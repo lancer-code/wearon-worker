@@ -180,6 +180,25 @@ services:
           cpus: '0.5'
           memory: 512M
 
+  node-exporter:
+    image: prom/node-exporter:latest
+    command:
+      - '--path.rootfs=/host'
+      - '--no-collector.arp'
+      - '--no-collector.netstat'
+      - '--no-collector.softnet'
+    volumes:
+      - /:/host:ro,rslave
+    networks:
+      - wearon-net
+    restart: unless-stopped
+    pid: host
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 128M
+
   whatsapp-webhook:
     image: ghcr.io/optiop/grafana-whatsapp-webhook:v0.1.5
     environment:

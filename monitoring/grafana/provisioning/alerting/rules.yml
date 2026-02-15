@@ -1,0 +1,147 @@
+apiVersion: 1
+
+groups:
+  - orgId: 1
+    name: wearon-alerts
+    folder: WearOn Alerts
+    interval: 1m
+    rules:
+      - uid: high-task-error-rate
+        title: High Celery Task Error Rate
+        condition: C
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(celery_task_failed_total[5m])
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+          - refId: B
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: rate(celery_task_received_total[5m])
+              instant: false
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: B
+          - refId: C
+            datasourceUid: __expr__
+            model:
+              conditions:
+                - evaluator:
+                    params:
+                      - 0.1
+                    type: gt
+                  operator:
+                    type: and
+                  query:
+                    params:
+                      - C
+                  reducer:
+                    params: []
+                    type: last
+              expression: $A / $B
+              type: math
+              refId: C
+        for: 5m
+        annotations:
+          summary: "Celery task error rate is above 10%"
+          description: "Task failure rate has exceeded 10% over the last 5 minutes."
+        labels:
+          severity: critical
+
+      - uid: worker-health-degraded
+        title: Worker Health Degraded
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: up{job="worker"} == 0
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        for: 2m
+        annotations:
+          summary: "Worker health check failing"
+          description: "Worker service has been unreachable for more than 2 minutes."
+        labels:
+          severity: critical
+
+      - uid: high-cpu-usage
+        title: High CPU Usage
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: 100 - (avg(rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 85
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        for: 5m
+        annotations:
+          summary: "CPU usage above 85%"
+          description: "VPS CPU utilization has been above 85% for more than 5 minutes."
+        labels:
+          severity: warning
+
+      - uid: low-disk-space
+        title: Low Disk Space
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 300
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: node_filesystem_avail_bytes{mountpoint="/"} < 2147483648
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        for: 5m
+        annotations:
+          summary: "Disk space below 2 GB"
+          description: "Available disk space on root filesystem has been below 2 GB for more than 5 minutes."
+        labels:
+          severity: warning
+
+      - uid: queue-stalled
+        title: Queue Stalled
+        condition: A
+        data:
+          - refId: A
+            relativeTimeRange:
+              from: 1800
+              to: 0
+            datasourceUid: prometheus
+            model:
+              expr: increase(celery_task_received_total[30m]) == 0
+              instant: true
+              intervalMs: 1000
+              maxDataPoints: 43200
+              refId: A
+        for: 0s
+        annotations:
+          summary: "No generation tasks processed for 30 minutes"
+          description: "No Celery tasks have been received in the last 30 minutes. Queue may be stalled."
+        labels:
+          severity: warning
