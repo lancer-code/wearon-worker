@@ -203,7 +203,7 @@ services:
           memory: 128M
 
   whatsapp-webhook:
-    image: ghcr.io/optiop/grafana-whatsapp-webhook:v0.1.5
+    image: ghcr.io/optiop/grafana-whatsapp-webhook:latest
     environment:
       - WHATSAPP_APP_TOKEN=${WHATSAPP_APP_TOKEN}
     volumes:
