@@ -158,29 +158,37 @@ jobs:
             echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
             cd /opt/wearon
 
-            # Detect first deploy vs update
-            if docker compose -f docker-compose.prod.yml ps --quiet 2>/dev/null | grep -q .; then
-              echo "=== Updating existing deployment ==="
-              docker compose -f docker-compose.prod.yml pull worker
-              timeout 60 docker compose -f docker-compose.prod.yml up -d --wait
-            else
-              echo "=== First deploy: pulling all images ==="
-              docker compose -f docker-compose.prod.yml pull
-
-              # Obtain SSL certificate before starting nginx
-              if [ ! -d "/var/lib/docker/volumes/$(basename $(pwd))_certbot-certs/_data/live" ]; then
-                echo "Obtaining SSL certificate..."
-                bash scripts/init-ssl.sh
+            # Check if SSL cert exists (needed regardless of first/update deploy)
+            CERT_VOLUME="$(basename $(pwd))_certbot-certs"
+            CERT_EXISTS=false
+            if docker volume inspect "$CERT_VOLUME" &>/dev/null; then
+              if docker run --rm -v "${CERT_VOLUME}:/certs:ro" alpine sh -c "test -f /certs/live/*/fullchain.pem" 2>/dev/null; then
+                CERT_EXISTS=true
               fi
+            fi
 
-              echo "Starting all services..."
-              docker compose -f docker-compose.prod.yml up -d --wait
+            if [ "$CERT_EXISTS" = false ]; then
+              echo "=== SSL certificate not found, obtaining via Certbot ==="
+              docker compose -f docker-compose.prod.yml stop nginx 2>/dev/null || true
+              bash scripts/init-ssl.sh
 
               # Install cert renewal cron job
               CRON_CMD="0 3 * * * /opt/wearon/scripts/renew-certs.sh >> /var/log/wearon-cert-renewal.log 2>&1"
               ( crontab -l 2>/dev/null | grep -v 'renew-certs.sh'; echo "$CRON_CMD" ) | crontab -
               echo "Cron job installed: daily cert renewal at 3 AM"
             fi
+
+            # Pull and deploy
+            if docker compose -f docker-compose.prod.yml ps --quiet 2>/dev/null | grep -q .; then
+              echo "=== Updating existing deployment ==="
+              docker compose -f docker-compose.prod.yml pull worker
+            else
+              echo "=== First deploy: pulling all images ==="
+              docker compose -f docker-compose.prod.yml pull
+            fi
+
+            echo "Starting all services..."
+            timeout 60 docker compose -f docker-compose.prod.yml up -d --wait
 
             # Health check
             sleep 5

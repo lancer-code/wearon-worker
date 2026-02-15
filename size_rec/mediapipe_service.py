@@ -1,6 +1,9 @@
 from typing import Any, ClassVar
 
 import numpy as np
+import structlog
+
+logger = structlog.get_logger()
 
 
 class PoseEstimationError(Exception):
@@ -32,7 +35,8 @@ class MediaPipeService:
                 min_tracking_confidence=0.5,
             )
             self._model_loaded = True
-        except Exception:
+        except Exception as exc:
+            logger.error('mediapipe_load_failed', error=str(exc), exc_type=type(exc).__name__)
             self._pose = None
             self._model_loaded = False
 

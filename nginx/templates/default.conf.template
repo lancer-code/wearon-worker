@@ -6,8 +6,14 @@ resolver 127.0.0.11 valid=30s ipv6=off;
 
 # HTTP — ACME challenge + redirect to HTTPS
 server {
-    listen 80;
+    listen 80 default_server;
     server_name ${DOMAIN};
+
+    # Internal health check for Docker healthcheck (plain HTTP)
+    location /health {
+        proxy_pass http://worker_backend;
+        proxy_set_header Host $host;
+    }
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -20,7 +26,7 @@ server {
 
 # HTTPS — SSL termination + reverse proxy
 server {
-    listen 443 ssl;
+    listen 443 ssl default_server;
     server_name ${DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
