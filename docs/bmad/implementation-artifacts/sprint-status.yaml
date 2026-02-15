@@ -48,7 +48,7 @@ development_status:
 
   # Epic 2: Nginx Reverse Proxy & SSL
   epic-2: in-progress
-  3-1-create-nginx-reverse-proxy-configuration: ready-for-dev
+  3-1-create-nginx-reverse-proxy-configuration: review
   3-2-set-up-lets-encrypt-ssl-with-auto-renewal: ready-for-dev
   epic-2-retrospective: optional
 
