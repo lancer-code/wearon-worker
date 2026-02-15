@@ -48,15 +48,15 @@ development_status:
 
   # Epic 2: Nginx Reverse Proxy & SSL
   epic-2: in-progress
-  3-1-create-nginx-reverse-proxy-configuration: review
-  3-2-set-up-lets-encrypt-ssl-with-auto-renewal: review
+  3-1-create-nginx-reverse-proxy-configuration: in-progress
+  3-2-set-up-lets-encrypt-ssl-with-auto-renewal: in-progress
   epic-2-retrospective: optional
 
   # Epic 3: Metrics & Monitoring
   epic-3: in-progress
   4-1-add-application-metrics-to-worker: review
   4-2-deploy-prometheus-and-celery-exporter: review
-  4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: ready-for-dev
+  4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: review
   4-4-deploy-grafana-with-auto-provisioned-dashboards: ready-for-dev
   epic-3-retrospective: optional
 
