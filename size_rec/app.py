@@ -2,6 +2,7 @@ import hashlib
 from contextlib import asynccontextmanager
 from uuid import uuid4
 
+import httpx
 import structlog
 from fastapi import FastAPI, Header, HTTPException
 from prometheus_fastapi_instrumentator import Instrumentator
@@ -27,6 +28,21 @@ Instrumentator().instrument(app).expose(app)
 
 _mediapipe_service: MediaPipeService | None = None
 _redis_client = RedisHealthClient.from_env()
+
+MONITORING_ENDPOINTS = {
+    'prometheus': 'http://prometheus:9090/-/healthy',
+    'loki': 'http://loki:3100/ready',
+    'grafana': 'http://grafana:3000/api/health',
+}
+
+
+async def _check_http(url: str) -> bool:
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            resp = await client.get(url)
+            return resp.status_code == 200
+    except Exception:
+        return False
 
 
 def get_mediapipe_service() -> MediaPipeService:
@@ -82,7 +98,12 @@ async def health() -> HealthResponse:
     except Exception:
         celery_connected = False
 
-    all_healthy = size_rec_model_loaded and redis_connected and celery_connected
+    prometheus_connected = await _check_http(MONITORING_ENDPOINTS['prometheus'])
+    loki_connected = await _check_http(MONITORING_ENDPOINTS['loki'])
+    grafana_connected = await _check_http(MONITORING_ENDPOINTS['grafana'])
+
+    core_healthy = size_rec_model_loaded and redis_connected and celery_connected
+    all_healthy = core_healthy and prometheus_connected and loki_connected and grafana_connected
     status = 'ok' if all_healthy else 'degraded'
 
     return HealthResponse(
@@ -90,4 +111,7 @@ async def health() -> HealthResponse:
         size_rec_model_loaded=size_rec_model_loaded,
         redis_connected=redis_connected,
         celery_connected=celery_connected,
+        prometheus_connected=prometheus_connected,
+        loki_connected=loki_connected,
+        grafana_connected=grafana_connected,
     )

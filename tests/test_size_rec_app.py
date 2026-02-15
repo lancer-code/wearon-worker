@@ -86,16 +86,26 @@ class StubCeleryApp:
         self.control = StubCeleryControl(alive)
 
 
+def _fake_check_http(result: bool):
+    async def _check(_url: str) -> bool:
+        return result
+    return _check
+
+
 @pytest.mark.asyncio
 async def test_health_endpoint_reports_model_and_redis_status(monkeypatch):
     monkeypatch.setattr(app_module, '_mediapipe_service', StubMediaPipeService(make_landmarks(), loaded=True))
     monkeypatch.setattr(app_module, '_redis_client', StubRedisClient(True))
     monkeypatch.setattr(app_module, 'celery_app', StubCeleryApp(alive=True))
+    monkeypatch.setattr(app_module, '_check_http', _fake_check_http(True))
 
     response = await app_module.health()
     assert response.size_rec_model_loaded is True
     assert response.redis_connected is True
     assert response.celery_connected is True
+    assert response.prometheus_connected is True
+    assert response.loki_connected is True
+    assert response.grafana_connected is True
     assert response.status == 'ok'
 
 
@@ -104,11 +114,15 @@ async def test_health_endpoint_reports_degraded_when_dependencies_not_ready(monk
     monkeypatch.setattr(app_module, '_mediapipe_service', StubMediaPipeService(make_landmarks(), loaded=False))
     monkeypatch.setattr(app_module, '_redis_client', StubRedisClient(False))
     monkeypatch.setattr(app_module, 'celery_app', StubCeleryApp(alive=False))
+    monkeypatch.setattr(app_module, '_check_http', _fake_check_http(False))
 
     response = await app_module.health()
     assert response.size_rec_model_loaded is False
     assert response.redis_connected is False
     assert response.celery_connected is False
+    assert response.prometheus_connected is False
+    assert response.loki_connected is False
+    assert response.grafana_connected is False
     assert response.status == 'degraded'
 
 

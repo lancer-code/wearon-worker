@@ -43,4 +43,7 @@ class HealthResponse(BaseModel):
     size_rec_model_loaded: bool
     redis_connected: bool
     celery_connected: bool
+    prometheus_connected: bool
+    loki_connected: bool
+    grafana_connected: bool
 
