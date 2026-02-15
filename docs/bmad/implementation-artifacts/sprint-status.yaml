@@ -43,7 +43,7 @@ development_status:
   # Epic 1: Production Docker Compose Foundation
   epic-1: in-progress
   2-1-create-production-docker-compose-configuration: review
-  2-2-add-service-restart-policies-and-resource-limits: ready-for-dev
+  2-2-add-service-restart-policies-and-resource-limits: review
   epic-1-retrospective: optional
 
   # Epic 2: Nginx Reverse Proxy & SSL
