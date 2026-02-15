@@ -57,12 +57,12 @@ development_status:
   4-1-add-application-metrics-to-worker: review
   4-2-deploy-prometheus-and-celery-exporter: review
   4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: review
-  4-4-deploy-grafana-with-auto-provisioned-dashboards: review
+  4-4-deploy-grafana-with-auto-provisioned-dashboards: in-progress
   epic-3-retrospective: optional
 
   # Epic 4: Alerting
   epic-4: in-progress
-  5-1-deploy-whatsapp-webhook-bridge: ready-for-dev
+  5-1-deploy-whatsapp-webhook-bridge: review
   5-2-create-grafana-alert-rules: ready-for-dev
   epic-4-retrospective: optional
 
