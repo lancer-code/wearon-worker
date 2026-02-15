@@ -1,4 +1,4 @@
-name: CI/CD
+name: WearOn Worker CI/CD
 
 on:
   push:
@@ -8,6 +8,7 @@ on:
 
 jobs:
   test:
+    name: Test & Validate
     runs-on: ubuntu-latest
 
     env:
@@ -37,6 +38,7 @@ jobs:
         run: docker build -t wearon-worker:test .
 
   deploy:
+    name: Build & Deploy
     needs: test
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
