@@ -96,6 +96,12 @@ else
     echo "  All services healthy!"
 fi
 
+# Install certificate renewal cron job (daily at 3 AM)
+echo "Installing certificate renewal cron job..."
+CRON_CMD="0 3 * * * /opt/wearon/scripts/renew-certs.sh >> /var/log/wearon-cert-renewal.log 2>&1"
+( crontab -l 2>/dev/null | grep -v 'renew-certs.sh'; echo "$CRON_CMD" ) | crontab -
+echo "  Cron job installed: daily at 3:00 AM"
+
 echo ""
 echo "=== Deployment Complete ==="
 echo ""
