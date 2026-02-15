@@ -70,6 +70,41 @@ services:
           cpus: '0.5'
           memory: 256M
 
+  prometheus:
+    image: prom/prometheus:latest
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    networks:
+      - wearon-net
+    restart: unless-stopped
+    healthcheck:
+      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:9090/-/healthy']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          cpus: '0.5'
+          memory: 512M
+
+  celery-exporter:
+    image: danihodovic/celery-exporter:latest
+    depends_on:
+      redis:
+        condition: service_healthy
+    environment:
+      - CE_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+    networks:
+      - wearon-net
+    restart: unless-stopped
+    deploy:
+      resources:
+        limits:
+          cpus: '0.25'
+          memory: 256M
+
 networks:
   wearon-net:
     driver: bridge
@@ -78,3 +113,4 @@ volumes:
   redis-data:
   certbot-webroot:
   certbot-certs:
+  prometheus-data:

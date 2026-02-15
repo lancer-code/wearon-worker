@@ -43,7 +43,7 @@ development_status:
   # Epic 1: Production Docker Compose Foundation
   epic-1: in-progress
   2-1-create-production-docker-compose-configuration: in-progress
-  2-2-add-service-restart-policies-and-resource-limits: review
+  2-2-add-service-restart-policies-and-resource-limits: in-progress
   epic-1-retrospective: optional
 
   # Epic 2: Nginx Reverse Proxy & SSL
@@ -55,7 +55,7 @@ development_status:
   # Epic 3: Metrics & Monitoring
   epic-3: in-progress
   4-1-add-application-metrics-to-worker: review
-  4-2-deploy-prometheus-and-celery-exporter: ready-for-dev
+  4-2-deploy-prometheus-and-celery-exporter: review
   4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: ready-for-dev
   4-4-deploy-grafana-with-auto-provisioned-dashboards: ready-for-dev
   epic-3-retrospective: optional
