@@ -1,9 +1,15 @@
+import os
 from typing import Any, ClassVar
 
 import numpy as np
 import structlog
 
 logger = structlog.get_logger()
+
+MODEL_PATH = os.environ.get(
+    'MEDIAPIPE_MODEL_PATH',
+    os.path.join(os.path.dirname(__file__), '..', 'models', 'pose_landmarker_full.task'),
+)
 
 
 class PoseEstimationError(Exception):
@@ -21,23 +27,23 @@ class MediaPipeService:
     _instance: ClassVar['MediaPipeService | None'] = None
 
     def __init__(self) -> None:
-        self._pose: Any | None = None
+        self._landmarker: Any | None = None
         self._model_loaded = False
 
         try:
             import mediapipe as mp
 
-            self._pose = mp.solutions.pose.Pose(
-                static_image_mode=True,
-                model_complexity=1,
-                enable_segmentation=False,
-                min_detection_confidence=0.5,
-                min_tracking_confidence=0.5,
+            base_options = mp.tasks.BaseOptions(model_asset_path=MODEL_PATH)
+            options = mp.tasks.vision.PoseLandmarkerOptions(
+                base_options=base_options,
+                running_mode=mp.tasks.vision.RunningMode.IMAGE,
             )
+            self._landmarker = mp.tasks.vision.PoseLandmarker.create_from_options(options)
+            self._mp = mp
             self._model_loaded = True
         except Exception as exc:
             logger.error('mediapipe_load_failed', error=str(exc), exc_type=type(exc).__name__)
-            self._pose = None
+            self._landmarker = None
             self._model_loaded = False
 
     @classmethod
@@ -55,23 +61,25 @@ class MediaPipeService:
         return self._model_loaded
 
     def extract_landmarks(self, image_rgb: np.ndarray) -> list[Landmark]:
-        if not self._model_loaded or self._pose is None:
+        if not self._model_loaded or self._landmarker is None:
             raise ModelNotLoadedError('MediaPipe model is not loaded')
 
-        results = self._pose.process(image_rgb)
-        source_landmarks = results.pose_world_landmarks or results.pose_landmarks
+        mp_image = self._mp.Image(image_format=self._mp.ImageFormat.SRGB, data=image_rgb)
+        result = self._landmarker.detect(mp_image)
 
-        if source_landmarks is None:
+        if not result.pose_world_landmarks and not result.pose_landmarks:
             raise PoseEstimationError('No pose landmarks detected')
 
+        source = result.pose_world_landmarks[0] if result.pose_world_landmarks else result.pose_landmarks[0]
+
         landmarks: list[Landmark] = []
-        for landmark in source_landmarks.landmark:
+        for lm in source:
             landmarks.append(
                 {
-                    'x': float(landmark.x),
-                    'y': float(landmark.y),
-                    'z': float(getattr(landmark, 'z', 0.0)),
-                    'visibility': float(getattr(landmark, 'visibility', 1.0)),
+                    'x': float(lm.x),
+                    'y': float(lm.y),
+                    'z': float(getattr(lm, 'z', 0.0)),
+                    'visibility': float(getattr(lm, 'visibility', 1.0)),
                 }
             )
 
@@ -79,4 +87,3 @@ class MediaPipeService:
             raise PoseEstimationError(f'Expected 33 landmarks, got {len(landmarks)}')
 
         return landmarks
-

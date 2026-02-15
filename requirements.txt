@@ -16,7 +16,7 @@ openai>=1.68.0
 Pillow>=11.0.0
 
 # MediaPipe (size rec)
-mediapipe>=0.10.0
+mediapipe>=0.10.31
 
 # HTTP client
 httpx>=0.28.0
