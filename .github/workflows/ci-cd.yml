@@ -104,6 +104,29 @@ jobs:
           WHATSAPP_APP_TOKEN: ${{ secrets.WHATSAPP_APP_TOKEN }}
           WHATSAPP_RECIPIENT_NUMBER: ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
 
+      - name: Ensure Docker is installed on VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USERNAME }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            if command -v docker &> /dev/null; then
+              echo "Docker already installed: $(docker --version)"
+            else
+              echo "Installing Docker..."
+              curl -fsSL https://get.docker.com | sh
+              systemctl enable docker
+              systemctl start docker
+              echo "Docker installed: $(docker --version)"
+            fi
+            if docker compose version &> /dev/null; then
+              echo "Docker Compose already available: $(docker compose version)"
+            else
+              echo "ERROR: docker compose plugin not found"
+              exit 1
+            fi
+
       - name: Deploy to VPS
         uses: appleboy/ssh-action@v1
         with:
