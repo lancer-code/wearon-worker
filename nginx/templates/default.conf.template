@@ -9,8 +9,13 @@ server {
     listen 80 default_server;
     server_name ${DOMAIN};
 
-    # Internal health check for Docker healthcheck (plain HTTP)
+    # Internal health check for Docker healthcheck only (not exposed externally)
     location /health {
+        allow 172.16.0.0/12;
+        allow 10.0.0.0/8;
+        allow 192.168.0.0/16;
+        allow 127.0.0.0/8;
+        deny all;
         proxy_pass http://worker_backend;
         proxy_set_header Host $host;
     }
@@ -33,7 +38,7 @@ server {
     ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
-    add_header Strict-Transport-Security "max-age=31536000" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
 
     # Worker API endpoints
     location /health {

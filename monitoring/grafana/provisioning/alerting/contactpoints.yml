@@ -1,12 +1,3 @@
 apiVersion: 1
 
-contactPoints:
-  - orgId: 1
-    name: WhatsApp
-    receivers:
-      - uid: whatsapp-webhook
-        type: webhook
-        settings:
-          url: http://whatsapp-webhook:8080/whatsapp/send/grafana-alert/user/${WHATSAPP_RECIPIENT_NUMBER}/${WHATSAPP_APP_TOKEN}
-          httpMethod: POST
-        disableResolveMessage: false
+contactPoints: []

@@ -11,6 +11,7 @@ from services.redis_client import RedisHealthClient
 from size_rec.image_processing import ImageDownloadError, download_and_prepare_image
 from size_rec.mediapipe_service import MediaPipeService, ModelNotLoadedError, PoseEstimationError
 from size_rec.size_calculator import calculate_size_recommendation
+from worker.celery_app import celery_app
 
 structlog.configure(processors=[structlog.processors.JSONRenderer()])
 
@@ -72,12 +73,21 @@ async def estimate_body(
 
 @app.get('/health', response_model=HealthResponse)
 async def health() -> HealthResponse:
-    model_loaded = get_mediapipe_service().is_loaded
+    size_rec_model_loaded = get_mediapipe_service().is_loaded
     redis_connected = await _redis_client.ping()
-    status = 'ok' if model_loaded and redis_connected else 'degraded'
+
+    try:
+        ping_response = celery_app.control.ping(timeout=2.0)
+        celery_connected = len(ping_response) > 0
+    except Exception:
+        celery_connected = False
+
+    all_healthy = size_rec_model_loaded and redis_connected and celery_connected
+    status = 'ok' if all_healthy else 'degraded'
 
     return HealthResponse(
         status=status,
-        model_loaded=model_loaded,
+        size_rec_model_loaded=size_rec_model_loaded,
         redis_connected=redis_connected,
+        celery_connected=celery_connected,
     )

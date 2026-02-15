@@ -136,8 +136,6 @@ services:
         condition: service_healthy
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}
-      - WHATSAPP_APP_TOKEN=${WHATSAPP_APP_TOKEN}
-      - WHATSAPP_RECIPIENT_NUMBER=${WHATSAPP_RECIPIENT_NUMBER}
     volumes:
       - ./monitoring/grafana/grafana.ini:/etc/grafana/grafana.ini:ro
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
@@ -175,25 +173,6 @@ services:
           cpus: '0.25'
           memory: 128M
 
-  whatsapp-webhook:
-    image: ghcr.io/optiop/grafana-whatsapp-webhook:latest
-    environment:
-      - WHATSAPP_APP_TOKEN=${WHATSAPP_APP_TOKEN}
-    volumes:
-      - whatsapp-data:/app/out
-    networks:
-      - wearon-net
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:8080/health']
-      interval: 30s
-      timeout: 5s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '0.25'
-          memory: 128M
 
 networks:
   wearon-net:
@@ -205,4 +184,3 @@ volumes:
   prometheus-data:
   loki-data:
   grafana-data:
-  whatsapp-data:

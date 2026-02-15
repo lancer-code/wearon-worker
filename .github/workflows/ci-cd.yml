@@ -78,7 +78,7 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: REDIS_URL,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,OPENAI_API_KEY,DOMAIN,CERTBOT_EMAIL,GF_SECURITY_ADMIN_PASSWORD,WHATSAPP_APP_TOKEN,WHATSAPP_RECIPIENT_NUMBER
+          envs: REDIS_URL,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,OPENAI_API_KEY,DOMAIN,CERTBOT_EMAIL,GF_SECURITY_ADMIN_PASSWORD
           script: |
             mkdir -p /opt/wearon
             printf '%s\n' \
@@ -91,8 +91,6 @@ jobs:
               "DOMAIN=${DOMAIN}" \
               "CERTBOT_EMAIL=${CERTBOT_EMAIL}" \
               "GF_SECURITY_ADMIN_PASSWORD=${GF_SECURITY_ADMIN_PASSWORD}" \
-              "WHATSAPP_APP_TOKEN=${WHATSAPP_APP_TOKEN}" \
-              "WHATSAPP_RECIPIENT_NUMBER=${WHATSAPP_RECIPIENT_NUMBER}" \
               > /opt/wearon/.env
         env:
           REDIS_URL: ${{ secrets.REDIS_URL }}
@@ -102,8 +100,6 @@ jobs:
           DOMAIN: ${{ secrets.DOMAIN }}
           CERTBOT_EMAIL: ${{ secrets.CERTBOT_EMAIL }}
           GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
-          WHATSAPP_APP_TOKEN: ${{ secrets.WHATSAPP_APP_TOKEN }}
-          WHATSAPP_RECIPIENT_NUMBER: ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
 
       - name: Setup VPS prerequisites
         uses: appleboy/ssh-action@v1
@@ -187,8 +183,11 @@ jobs:
               docker compose -f docker-compose.prod.yml pull
             fi
 
+            # Remove containers no longer in compose file
+            docker compose -f docker-compose.prod.yml down --remove-orphans 2>/dev/null || true
+
             echo "Starting all services..."
-            timeout 60 docker compose -f docker-compose.prod.yml up -d --wait
+            timeout 120 docker compose -f docker-compose.prod.yml up -d --wait
 
             # Health check
             sleep 5

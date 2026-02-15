@@ -40,6 +40,7 @@ class HealthResponse(BaseModel):
     model_config = ConfigDict(strict=True, extra='forbid')
 
     status: Literal['ok', 'degraded']
-    model_loaded: bool
+    size_rec_model_loaded: bool
     redis_connected: bool
+    celery_connected: bool
 
