@@ -56,7 +56,7 @@ if [ ! -f "${DEPLOY_DIR}/.env" ]; then
     echo ""
     echo "  Created ${DEPLOY_DIR}/.env from template."
     echo "  IMPORTANT: Edit ${DEPLOY_DIR}/.env and fill in all required values:"
-    echo "    - REDIS_PASSWORD"
+    echo "    - REDIS_URL (Upstash rediss:// connection string)"
     echo "    - SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY"
     echo "    - OPENAI_API_KEY"
     echo "    - CERTBOT_EMAIL"

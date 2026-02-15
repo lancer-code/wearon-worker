@@ -1,31 +1,7 @@
 services:
-  redis:
-    image: redis:7-alpine
-    command: ['redis-server', '--requirepass', '${REDIS_PASSWORD}']
-    volumes:
-      - redis-data:/data
-    networks:
-      - wearon-net
-    restart: unless-stopped
-    healthcheck:
-      test: ['CMD', 'redis-cli', '-a', '${REDIS_PASSWORD}', 'ping']
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    deploy:
-      resources:
-        limits:
-          cpus: '0.5'
-          memory: 512M
-
   worker:
     image: knocs/wearon-worker:latest
-    depends_on:
-      redis:
-        condition: service_healthy
     env_file: .env
-    environment:
-      - REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
     networks:
       - wearon-net
     restart: unless-stopped
@@ -92,11 +68,8 @@ services:
 
   celery-exporter:
     image: danihodovic/celery-exporter:latest
-    depends_on:
-      redis:
-        condition: service_healthy
     environment:
-      - CE_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - CE_BROKER_URL=${REDIS_URL}
     networks:
       - wearon-net
     restart: unless-stopped
@@ -227,7 +200,6 @@ networks:
     driver: bridge
 
 volumes:
-  redis-data:
   certbot-webroot:
   certbot-certs:
   prometheus-data:

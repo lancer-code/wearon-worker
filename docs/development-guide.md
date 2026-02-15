@@ -30,7 +30,7 @@ cp .env.example .env
 | `OPENAI_API_KEY` | Yes | — | OpenAI API key |
 | `OPENAI_MAX_RETRIES` | No | 3 | Retry count for OpenAI API |
 | `WORKER_CONCURRENCY` | No | 5 | Celery worker concurrency |
-| `REDIS_PASSWORD` | No | `devpassword` | Redis password (docker-compose) |
+| `REDIS_PASSWORD` | No | `devpassword` | Redis password (local docker-compose only) |
 
 ## Running Locally
 

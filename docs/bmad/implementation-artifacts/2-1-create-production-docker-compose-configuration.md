@@ -1,6 +1,6 @@
 # Story 2.1: Create Production Docker Compose Configuration
 
-Status: review
+Status: done
 
 ## Story
 
@@ -65,6 +65,15 @@ The following is already in place and should be leveraged:
   - [x] 4.2 Verify worker health check configured (python urllib on localhost:8000/health)
   - [x] 4.3 Verify port 8000 is NOT accessible from host (no ports mapping in worker service)
 
+### Review Follow-ups (AI)
+
+- [x] [AI-Review][HIGH] File List claims `.env.example` was modified, but no git evidence exists — **Resolved: False positive.** Commit `823cc1c` includes `.env.example` (+3 lines). Git evidence confirmed.
+- [x] [AI-Review][HIGH] File List claims `Makefile` was modified, but no git evidence exists — **Resolved: False positive.** Commit `823cc1c` includes `Makefile` (+14/-1 lines). Git evidence confirmed.
+- [x] [AI-Review][MEDIUM] Validation task 4.1 not reproducible — **Resolved.** `docker compose -f docker-compose.prod.yml config` validates successfully with `.env` file present. Requires env vars which is expected.
+- [x] [AI-Review][MEDIUM] Out-of-scope Nginx/certbot config in docker-compose.prod.yml — **Resolved: False positive.** Story 2.1 commit (`823cc1c`) only contains redis + worker. Nginx was added by Story 3.1 (`3476106`).
+- [x] [AI-Review][MEDIUM] `nginx/conf.d/default.conf` deletion not documented — **Resolved: False positive.** File was created by Story 3.1 and renamed by Story 3.2. Unrelated to Story 2.1.
+- [x] [AI-Review][LOW] Story doc inconsistent about healthcheck (curl vs python urllib) — **Resolved.** Fixed Dev Notes table to say "python urllib health endpoint".
+
 ## Dev Notes
 
 ### Key Differences from docker-compose.yml (dev)
@@ -76,7 +85,7 @@ The following is already in place and should be leveraged:
 | Network | Default | Explicit `wearon-net` bridge |
 | Restart | None | `unless-stopped` |
 | Resources | None | CPU/memory limits |
-| Health check | None on worker | curl health endpoint |
+| Health check | None on worker | python urllib health endpoint |
 
 ### Architecture References
 
@@ -107,6 +116,10 @@ The following is already in place and should be leveraged:
 
 No issues encountered during implementation.
 
+### Senior Developer Review (AI)
+
+- 2026-02-15: Adversarial review completed. Added 6 follow-up action items (2 HIGH, 3 MEDIUM, 1 LOW).
+
 ## File List
 
 - `docker-compose.prod.yml` — **New** — Production Docker Compose configuration
@@ -116,3 +129,5 @@ No issues encountered during implementation.
 ## Change Log
 
 - 2026-02-15: Created production Docker Compose configuration with Redis + worker services, health checks, restart policies, resource limits, `wearon-net` bridge network, and production Makefile targets.
+- 2026-02-15: Senior Developer Review (AI) performed; status moved to in-progress and follow-up action items added.
+- 2026-02-15: All 6 review follow-ups resolved (4 false positives, 1 validated, 1 doc fix). Status moved to done.

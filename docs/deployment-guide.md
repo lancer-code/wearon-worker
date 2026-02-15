@@ -34,16 +34,15 @@ Uses placeholder env vars for pydantic-settings import (tests mock all externals
 
 1. Checkout code
 2. Setup Docker Buildx
-3. Login to GHCR (`ghcr.io`)
+3. Login to Docker Hub
 4. Build and push image:
-   - `ghcr.io/lancer-code/wearon-worker:latest`
-   - `ghcr.io/lancer-code/wearon-worker:<commit-sha>`
+   - `knocs/wearon-worker:latest`
+   - `knocs/wearon-worker:<commit-sha>`
    - Uses GitHub Actions cache (`type=gha`)
-5. SSH deploy to VPS:
-   - Pull latest image
-   - Stop and remove existing container
-   - Start new container with `--restart unless-stopped`
-   - Env vars loaded from `/opt/wearon/.env` on VPS
+5. Sync config files to VPS (docker-compose, nginx, monitoring, scripts)
+6. Write `.env` to VPS from GitHub Secrets
+7. Setup VPS prerequisites (Docker, firewall)
+8. Deploy: first-deploy detection vs rolling update, SSL cert, health check
 
 ## Required GitHub Secrets
 
@@ -52,9 +51,17 @@ Uses placeholder env vars for pydantic-settings import (tests mock all externals
 | `VPS_HOST` | SSH deploy target hostname |
 | `VPS_USERNAME` | SSH user |
 | `VPS_SSH_KEY` | SSH private key |
-| `GITHUB_TOKEN` | Automatic — GHCR authentication |
-
-Application secrets (OPENAI_API_KEY, SUPABASE keys, etc.) are stored on the VPS at `/opt/wearon/.env` — never in GitHub.
+| `DOCKERHUB_USERNAME` | Docker Hub login |
+| `DOCKERHUB_TOKEN` | Docker Hub access token |
+| `REDIS_URL` | Upstash Redis connection string (`rediss://...`) |
+| `SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+| `OPENAI_API_KEY` | OpenAI API key |
+| `DOMAIN` | Production domain (e.g. `worker.wearonai.com`) |
+| `CERTBOT_EMAIL` | Email for SSL certificate |
+| `GF_SECURITY_ADMIN_PASSWORD` | Grafana admin password |
+| `WHATSAPP_APP_TOKEN` | WhatsApp webhook token |
+| `WHATSAPP_RECIPIENT_NUMBER` | WhatsApp alert recipient |
 
 ## Production Deployment
 
@@ -71,16 +78,11 @@ docker run -d \
   wearon-worker
 ```
 
-### Redis Setup
+### Redis (Upstash)
 
-```bash
-docker run -d \
-  --name redis \
-  -p 6379:6379 \
-  redis:7-alpine redis-server --requirepass YOUR_PASSWORD
-```
+Production uses Upstash Redis (managed, TLS-enabled). Both the worker and Next.js API connect to the same Upstash instance.
 
-Set `REDIS_URL` in the Next.js web app to point to the VPS Redis endpoint.
+Set `REDIS_URL` to your Upstash `rediss://` connection string in both the worker `.env` and the Next.js web app environment.
 
 ## Health Monitoring
 

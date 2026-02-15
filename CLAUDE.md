@@ -144,7 +144,7 @@ Managed via pydantic-settings (`config/settings.py`), loaded from `.env` file. S
 
 GitHub Actions (`.github/workflows/ci-cd.yml`):
 - **PR to main**: Runs pytest + validates Docker build (uses placeholder env vars for pydantic-settings import)
-- **Push to main**: Builds Docker image, pushes to GHCR (`ghcr.io/lancer-code/wearon-worker`), deploys to VPS via SSH
+- **Push to main**: Builds Docker image, pushes to Docker Hub (`knocs/wearon-worker`), syncs configs, writes .env from secrets, deploys to VPS via SSH
 
 System dependencies required for tests and runtime: `libgl1`, `libglib2.0-0` (for MediaPipe).
 

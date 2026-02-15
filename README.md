@@ -81,17 +81,8 @@ curl http://localhost:8000/health
 
 ## Production Deployment
 
-Build the Docker image and deploy to any VPS with Docker:
+Production uses Docker Compose with Upstash Redis (managed, TLS). CI/CD handles deployment automatically on push to main.
 
-```bash
-docker build -t wearon-worker .
-docker run -d --env-file .env -p 8000:8000 wearon-worker
-```
+Set `REDIS_URL` to your Upstash `rediss://` connection string in both the worker and Next.js environments.
 
-Run Redis alongside it (or use the same `docker-compose.yml`):
-
-```bash
-docker run -d --name redis -p 6379:6379 redis:7-alpine redis-server --requirepass YOUR_PASSWORD
-```
-
-Set `REDIS_URL` in the Vercel web app to point to the VPS Redis endpoint.
+See [docs/deployment-guide.md](docs/deployment-guide.md) for full details.

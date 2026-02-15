@@ -1,10 +1,11 @@
 import asyncio
+import time
 
 import structlog
 
 from models.task_payload import GenerationTask
 from services.image_processor import download_and_resize
-from services.openai_client import OpenAIImageError, generate_tryon
+from services.openai_client import GenerationResult, OpenAIImageError, generate_tryon
 from services.supabase_client import get_supabase
 from worker.celery_app import celery_app
 
@@ -74,6 +75,7 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
         log.info('generation_processing')
 
         # 2. Download and resize images
+        start_time = time.time()
         loop = asyncio.new_event_loop()
         try:
             image_buffers: list[tuple[str, bytes]] = []
@@ -83,7 +85,7 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
                 image_buffers.append((f'{name}.jpg', buf))
 
             # 3. Call OpenAI
-            result_bytes = loop.run_until_complete(
+            result = loop.run_until_complete(
                 generate_tryon(
                     image_buffers=image_buffers,
                     prompt=task.prompt,
@@ -92,6 +94,8 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
             )
         finally:
             loop.close()
+
+        processing_time_ms = int((time.time() - start_time) * 1000)
 
         # 4. Upload result to Supabase Storage
         owner_id = _get_owner_id(task)
@@ -102,7 +106,7 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
 
         supabase.storage.from_('images').upload(
             storage_path,
-            result_bytes,
+            result.image_bytes,
             {'content-type': 'image/jpeg'},
         )
 
@@ -110,12 +114,17 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
         signed = supabase.storage.from_('images').create_signed_url(storage_path, 21600)
         signed_url = signed.get('signedURL', '')
 
-        # 5. Mark completed
-        supabase.table(session_table).update(
-            {'status': 'completed', 'result_image_url': signed_url}
-        ).eq('id', task.session_id).execute()
+        # 5. Mark completed with usage data
+        supabase.table(session_table).update({
+            'status': 'completed',
+            'result_image_url': signed_url,
+            'input_tokens': result.input_tokens,
+            'output_tokens': result.output_tokens,
+            'estimated_cost_usd': result.estimated_cost_usd,
+            'processing_time_ms': processing_time_ms,
+        }).eq('id', task.session_id).execute()
 
-        log.info('generation_completed')
+        log.info('generation_completed', processing_time_ms=processing_time_ms)
 
     except OpenAIImageError as exc:
         log.warn('generation_failed', error=str(exc), moderation=exc.is_moderation_error)

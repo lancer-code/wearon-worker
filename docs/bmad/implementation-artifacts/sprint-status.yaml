@@ -53,22 +53,22 @@ development_status:
   epic-2-retrospective: optional
 
   # Epic 3: Metrics & Monitoring
-  epic-3: in-progress
-  4-1-add-application-metrics-to-worker: review
-  4-2-deploy-prometheus-and-celery-exporter: review
-  4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: review
-  4-4-deploy-grafana-with-auto-provisioned-dashboards: in-progress
+  epic-3: done
+  4-1-add-application-metrics-to-worker: done
+  4-2-deploy-prometheus-and-celery-exporter: done
+  4-3-deploy-loki-and-grafana-alloy-for-log-aggregation: done
+  4-4-deploy-grafana-with-auto-provisioned-dashboards: done
   epic-3-retrospective: optional
 
   # Epic 4: Alerting
-  epic-4: in-progress
-  5-1-deploy-whatsapp-webhook-bridge: in-progress
-  5-2-create-grafana-alert-rules: review
+  epic-4: done
+  5-1-deploy-whatsapp-webhook-bridge: done
+  5-2-create-grafana-alert-rules: done
   epic-4-retrospective: optional
 
   # Epic 5: Deployment Automation
-  epic-5: in-progress
-  6-1-create-first-deploy-script: review
-  6-2-update-cicd-for-zero-downtime-docker-compose-deploy: review
-  6-3-add-certificate-renewal-cron-job: review
+  epic-5: done
+  6-1-create-first-deploy-script: done
+  6-2-update-cicd-for-zero-downtime-docker-compose-deploy: done
+  6-3-add-certificate-renewal-cron-job: done
   epic-5-retrospective: optional

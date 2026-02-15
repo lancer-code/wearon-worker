@@ -1,6 +1,6 @@
 # Story 3.1: Create Nginx Reverse Proxy Configuration
 
-Status: review
+Status: done
 
 ## Story
 
@@ -60,6 +60,15 @@ So that **only ports 80 and 443 are exposed to the internet and internal service
   - [x] 4.2 Port 8000 not mapped to host — only ports 80/443 exposed via Nginx
   - [x] 4.3 `docker compose -f docker-compose.prod.yml config` validates successfully
 
+### Review Follow-ups (AI)
+
+- [x] [AI-Review][HIGH] Task 1.2 claims `nginx/conf.d/default.conf` — **Resolved: False positive.** Commit `3476106` created `nginx/conf.d/default.conf`. Story 3.2 (`5ed4a6d`) later moved it to `nginx/templates/default.conf.template`. Story 3.1 was correct at the time.
+- [x] [AI-Review][HIGH] Task 3.3 claims HTTP-only but HTTPS present — **Resolved: False positive.** Story 3.1 started HTTP-only as planned. HTTPS was added by Story 3.2. Reviewer compared current state, not commit state.
+- [x] [AI-Review][HIGH] Compose validation not reproducible — **Resolved.** `docker compose -f docker-compose.prod.yml config` validates with `.env` file. Env vars are expected runtime requirement.
+- [x] [AI-Review][MEDIUM] Task 2.3 mount mismatch (conf.d vs templates) — **Resolved: False positive.** Story 3.1 originally mounted `nginx/conf.d/`. Story 3.2 changed to `nginx/templates/` for envsubst.
+- [x] [AI-Review][MEDIUM] File List path outdated — **Resolved.** Updated File List to note supersession by Story 3.2.
+- [x] [AI-Review][LOW] "HTTP-only" notes stale — **Resolved.** Notes describe Story 3.1's HTTP-only approach; HTTPS was added by Story 3.2 as planned.
+
 ## Dev Notes
 
 ### Nginx Routing Table
@@ -100,12 +109,18 @@ So that **only ports 80 and 443 are exposed to the internet and internal service
 
 No issues encountered during implementation.
 
+### Senior Developer Review (AI)
+
+- 2026-02-15: Adversarial review completed. Added 6 follow-up action items (3 HIGH, 2 MEDIUM, 1 LOW).
+
 ## File List
 
 - `nginx/nginx.conf` — **New** — Nginx main configuration
-- `nginx/conf.d/default.conf` — **New** — Server block with upstream definitions and proxy routes
+- `nginx/conf.d/default.conf` — **New** — Server block with upstream definitions and proxy routes *(superseded by Story 3.2 → `nginx/templates/default.conf.template`)*
 - `docker-compose.prod.yml` — **Modified** — Added nginx service with ports, volumes, health check, resource limits
 
 ## Change Log
 
 - 2026-02-15: Created Nginx reverse proxy configuration with worker and Grafana upstreams, SSL preparation volumes, and added nginx service to docker-compose.prod.yml.
+- 2026-02-15: Senior Developer Review (AI) performed; status moved to in-progress and review follow-ups added.
+- 2026-02-15: All 6 review follow-ups resolved (5 false positives from comparing current state vs commit state, 1 compose validation confirmed). Status moved to done.

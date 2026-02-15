@@ -1,5 +1,6 @@
 import asyncio
 import base64
+from dataclasses import dataclass
 
 import httpx
 import structlog
@@ -14,6 +15,40 @@ MODERATION_ERROR_MESSAGE = (
     'Your image was flagged by the safety filter. '
     'Please use different images that comply with content guidelines.'
 )
+
+# GPT Image 1.5 pricing per 1M tokens (USD)
+_TEXT_INPUT_PRICE = 5.00
+_TEXT_OUTPUT_PRICE = 10.00
+_IMAGE_INPUT_PRICE = 8.00
+_IMAGE_OUTPUT_PRICE = 32.00
+
+
+def _estimate_cost(usage: dict) -> float | None:
+    """Calculate estimated cost from API usage data."""
+    input_details = usage.get('input_tokens_details', {})
+    output_details = usage.get('output_tokens_details', {})
+
+    text_in = input_details.get('text_tokens', 0)
+    image_in = input_details.get('image_tokens', 0)
+    text_out = output_details.get('text_tokens', 0)
+    image_out = output_details.get('image_tokens', 0)
+
+    cost = (
+        text_in * _TEXT_INPUT_PRICE
+        + image_in * _IMAGE_INPUT_PRICE
+        + text_out * _TEXT_OUTPUT_PRICE
+        + image_out * _IMAGE_OUTPUT_PRICE
+    ) / 1_000_000
+
+    return round(cost, 6)
+
+
+@dataclass
+class GenerationResult:
+    image_bytes: bytes
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    estimated_cost_usd: float | None = None
 
 
 class OpenAIImageError(Exception):
@@ -34,7 +69,7 @@ async def generate_tryon(
     request_id: str,
     quality: str = 'medium',
     size: str = '1024x1536',
-) -> bytes:
+) -> GenerationResult:
     """Call OpenAI GPT Image 1.5 /images/edits with multiple images.
 
     Args:
@@ -45,7 +80,7 @@ async def generate_tryon(
         size: Output image size.
 
     Returns:
-        Raw bytes of the generated image (decoded from base64).
+        GenerationResult with image bytes and token usage data.
 
     Raises:
         OpenAIImageError: On API errors including moderation blocks.
@@ -93,10 +128,37 @@ async def generate_tryon(
             response.raise_for_status()
 
             body = response.json()
+
+            # Log token usage and estimated cost
+            usage = body.get('usage', {})
+            if usage:
+                input_details = usage.get('input_tokens_details', {})
+                output_details = usage.get('output_tokens_details', {})
+                cost = _estimate_cost(usage)
+                log.info(
+                    'openai_usage',
+                    total_tokens=usage.get('total_tokens'),
+                    input_tokens=usage.get('input_tokens'),
+                    output_tokens=usage.get('output_tokens'),
+                    text_input_tokens=input_details.get('text_tokens'),
+                    image_input_tokens=input_details.get('image_tokens'),
+                    text_output_tokens=output_details.get('text_tokens'),
+                    image_output_tokens=output_details.get('image_tokens'),
+                    estimated_cost_usd=cost,
+                )
+
+            usage_result = GenerationResult(
+                image_bytes=b'',
+                input_tokens=usage.get('input_tokens'),
+                output_tokens=usage.get('output_tokens'),
+                estimated_cost_usd=cost if usage else None,
+            )
+
             b64_data = body['data'][0].get('b64_json')
             if b64_data:
                 log.info('openai_success', format='base64')
-                return base64.b64decode(b64_data)
+                usage_result.image_bytes = base64.b64decode(b64_data)
+                return usage_result
 
             image_url = body['data'][0].get('url')
             if image_url:
@@ -104,7 +166,8 @@ async def generate_tryon(
                 async with httpx.AsyncClient(timeout=30.0) as dl:
                     dl_resp = await dl.get(image_url)
                     dl_resp.raise_for_status()
-                    return dl_resp.content
+                    usage_result.image_bytes = dl_resp.content
+                    return usage_result
 
             raise OpenAIImageError('No image data in response')
 

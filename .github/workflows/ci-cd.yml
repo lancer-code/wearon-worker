@@ -78,12 +78,11 @@ jobs:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
-          envs: REDIS_PASSWORD,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,OPENAI_API_KEY,DOMAIN,CERTBOT_EMAIL,GF_SECURITY_ADMIN_PASSWORD,WHATSAPP_APP_TOKEN,WHATSAPP_RECIPIENT_NUMBER
+          envs: REDIS_URL,SUPABASE_URL,SUPABASE_SERVICE_ROLE_KEY,OPENAI_API_KEY,DOMAIN,CERTBOT_EMAIL,GF_SECURITY_ADMIN_PASSWORD,WHATSAPP_APP_TOKEN,WHATSAPP_RECIPIENT_NUMBER
           script: |
             mkdir -p /opt/wearon
             printf '%s\n' \
-              "REDIS_URL=redis://:${REDIS_PASSWORD}@redis:6379/0" \
-              "REDIS_PASSWORD=${REDIS_PASSWORD}" \
+              "REDIS_URL=${REDIS_URL}" \
               "SUPABASE_URL=${SUPABASE_URL}" \
               "SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}" \
               "OPENAI_API_KEY=${OPENAI_API_KEY}" \
@@ -96,7 +95,7 @@ jobs:
               "WHATSAPP_RECIPIENT_NUMBER=${WHATSAPP_RECIPIENT_NUMBER}" \
               > /opt/wearon/.env
         env:
-          REDIS_PASSWORD: ${{ secrets.REDIS_PASSWORD }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
