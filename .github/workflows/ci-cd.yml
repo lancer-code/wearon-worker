@@ -104,13 +104,20 @@ jobs:
           WHATSAPP_APP_TOKEN: ${{ secrets.WHATSAPP_APP_TOKEN }}
           WHATSAPP_RECIPIENT_NUMBER: ${{ secrets.WHATSAPP_RECIPIENT_NUMBER }}
 
-      - name: Ensure Docker is installed on VPS
+      - name: Setup VPS prerequisites
         uses: appleboy/ssh-action@v1
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           script: |
+            # Ensure curl is available
+            if ! command -v curl &> /dev/null; then
+              echo "Installing curl..."
+              apt-get update -qq && apt-get install -y -qq curl
+            fi
+
+            # Ensure Docker is installed
             if command -v docker &> /dev/null; then
               echo "Docker already installed: $(docker --version)"
             else
@@ -120,11 +127,22 @@ jobs:
               systemctl start docker
               echo "Docker installed: $(docker --version)"
             fi
+
+            # Verify Docker Compose plugin
             if docker compose version &> /dev/null; then
-              echo "Docker Compose already available: $(docker compose version)"
+              echo "Docker Compose available: $(docker compose version)"
             else
               echo "ERROR: docker compose plugin not found"
               exit 1
+            fi
+
+            # Open firewall ports if ufw is active
+            if command -v ufw &> /dev/null && ufw status | grep -q "active"; then
+              echo "Configuring firewall..."
+              ufw allow 22/tcp
+              ufw allow 80/tcp
+              ufw allow 443/tcp
+              echo "Firewall: ports 22, 80, 443 open"
             fi
 
       - name: Deploy to VPS
@@ -134,12 +152,39 @@ jobs:
           username: ${{ secrets.VPS_USERNAME }}
           key: ${{ secrets.VPS_SSH_KEY }}
           envs: DOCKERHUB_USERNAME,DOCKERHUB_TOKEN
+          command_timeout: 10m
           script: |
             echo "${DOCKERHUB_TOKEN}" | docker login -u "${DOCKERHUB_USERNAME}" --password-stdin
             cd /opt/wearon
-            docker compose -f docker-compose.prod.yml pull worker
-            timeout 60 docker compose -f docker-compose.prod.yml up -d --wait
+
+            # Detect first deploy vs update
+            if docker compose -f docker-compose.prod.yml ps --quiet 2>/dev/null | grep -q .; then
+              echo "=== Updating existing deployment ==="
+              docker compose -f docker-compose.prod.yml pull worker
+              timeout 60 docker compose -f docker-compose.prod.yml up -d --wait
+            else
+              echo "=== First deploy: pulling all images ==="
+              docker compose -f docker-compose.prod.yml pull
+
+              # Obtain SSL certificate before starting nginx
+              if [ ! -d "/var/lib/docker/volumes/$(basename $(pwd))_certbot-certs/_data/live" ]; then
+                echo "Obtaining SSL certificate..."
+                bash scripts/init-ssl.sh
+              fi
+
+              echo "Starting all services..."
+              docker compose -f docker-compose.prod.yml up -d --wait
+
+              # Install cert renewal cron job
+              CRON_CMD="0 3 * * * /opt/wearon/scripts/renew-certs.sh >> /var/log/wearon-cert-renewal.log 2>&1"
+              ( crontab -l 2>/dev/null | grep -v 'renew-certs.sh'; echo "$CRON_CMD" ) | crontab -
+              echo "Cron job installed: daily cert renewal at 3 AM"
+            fi
+
+            # Health check
+            sleep 5
             docker compose -f docker-compose.prod.yml exec -T worker python -c "import urllib.request,json,sys; d=json.loads(urllib.request.urlopen('http://localhost:8000/health').read()); sys.exit(0 if d['status'] in ('ok','degraded') else 1)"
+            echo "Deploy successful!"
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
