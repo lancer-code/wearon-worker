@@ -1,0 +1,52 @@
+{
+  "workflow_version": "1.2.0",
+  "timestamps": {
+    "started": "2026-02-15T12:00:00Z",
+    "last_updated": "2026-02-15T12:15:00Z",
+    "completed": "2026-02-15T12:15:00Z"
+  },
+  "mode": "initial_scan",
+  "scan_level": "deep",
+  "project_root": "/home/glactic/projects/personal/wearon/wearon/wearon-worker",
+  "output_folder": "/home/glactic/projects/personal/wearon/wearon/wearon-worker/docs",
+  "project_types": [
+    {
+      "part_id": "wearon-worker",
+      "project_type_id": "backend",
+      "display_name": "Backend Worker Service"
+    }
+  ],
+  "completed_steps": [
+    {"step": "step_1", "status": "completed", "summary": "Classified as monolith with 1 part, backend type"},
+    {"step": "step_2", "status": "completed", "summary": "Found 4 existing docs"},
+    {"step": "step_3", "status": "completed", "summary": "Tech stack: FastAPI + Celery + Redis on Python 3.12"},
+    {"step": "step_4", "status": "completed", "summary": "2 HTTP endpoints, 1 Redis queue, 8 Pydantic models"},
+    {"step": "step_5", "status": "completed", "summary": "Source tree documented with 6 critical folders"},
+    {"step": "step_6", "status": "completed", "summary": "Dev and deployment guides written"},
+    {"step": "step_8", "status": "completed", "summary": "Architecture document written"},
+    {"step": "step_9", "status": "completed", "summary": "All supporting docs written"},
+    {"step": "step_10", "status": "completed", "summary": "Master index generated"},
+    {"step": "step_12", "status": "completed", "summary": "Workflow complete"}
+  ],
+  "current_step": "completed",
+  "findings": {
+    "project_classification": "Monolith backend, Python 3.12, FastAPI + Celery + Redis",
+    "existing_docs": 4,
+    "api_endpoints": 2,
+    "redis_queue_contracts": 1,
+    "pydantic_models": 8,
+    "critical_folders": 6,
+    "test_files": 6
+  },
+  "outputs_generated": [
+    "project-scan-report.json",
+    "project-overview.md",
+    "architecture.md",
+    "source-tree-analysis.md",
+    "api-contracts.md",
+    "data-models.md",
+    "development-guide.md",
+    "deployment-guide.md",
+    "index.md"
+  ]
+}

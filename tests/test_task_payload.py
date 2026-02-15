@@ -63,10 +63,51 @@ def test_default_version():
     task = GenerationTask(
         task_id='abc-111',
         channel='b2c',
+        user_id='user-1',
         session_id='sess-4',
-        image_urls=[],
+        image_urls=['https://example.com/img.jpg'],
         prompt='test',
         request_id='req_jkl',
         created_at='2026-02-09T14:30:00Z',
     )
     assert task.version == 1
+
+
+def test_b2c_requires_user_id():
+    with pytest.raises(ValidationError, match='b2c channel requires user_id'):
+        GenerationTask(
+            task_id='abc-222',
+            channel='b2c',
+            session_id='sess-5',
+            image_urls=['https://example.com/img.jpg'],
+            prompt='test',
+            request_id='req_mno',
+            created_at='2026-02-09T14:30:00Z',
+        )
+
+
+def test_b2b_requires_store_id():
+    with pytest.raises(ValidationError, match='b2b channel requires store_id'):
+        GenerationTask(
+            task_id='abc-333',
+            channel='b2b',
+            session_id='sess-6',
+            image_urls=['https://example.com/img.jpg'],
+            prompt='test',
+            request_id='req_pqr',
+            created_at='2026-02-09T14:30:00Z',
+        )
+
+
+def test_empty_image_urls_rejected():
+    with pytest.raises(ValidationError, match='image_urls must not be empty'):
+        GenerationTask(
+            task_id='abc-444',
+            channel='b2c',
+            user_id='user-1',
+            session_id='sess-7',
+            image_urls=[],
+            prompt='test',
+            request_id='req_stu',
+            created_at='2026-02-09T14:30:00Z',
+        )

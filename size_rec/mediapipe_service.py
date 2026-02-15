@@ -7,6 +7,10 @@ class PoseEstimationError(Exception):
     pass
 
 
+class ModelNotLoadedError(PoseEstimationError):
+    pass
+
+
 Landmark = dict[str, float]
 
 
@@ -48,7 +52,7 @@ class MediaPipeService:
 
     def extract_landmarks(self, image_rgb: np.ndarray) -> list[Landmark]:
         if not self._model_loaded or self._pose is None:
-            raise PoseEstimationError('MediaPipe model is not loaded')
+            raise ModelNotLoadedError('MediaPipe model is not loaded')
 
         results = self._pose.process(image_rgb)
         source_landmarks = results.pose_world_landmarks or results.pose_landmarks

@@ -15,6 +15,6 @@ docker run --rm \
     certbot/certbot renew --webroot -w /var/www/certbot --quiet
 
 # Reload Nginx to pick up new certificate (no restart needed)
-docker compose -f docker-compose.prod.yml exec nginx nginx -s reload
+docker compose -f docker-compose.prod.yml exec -T nginx nginx -s reload
 
 echo "[$(date)] Certificate renewal check complete."

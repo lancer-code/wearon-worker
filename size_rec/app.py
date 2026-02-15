@@ -9,7 +9,7 @@ from prometheus_fastapi_instrumentator import Instrumentator
 from models.size_rec import EstimateBodyRequest, EstimateBodyResponse, HealthResponse
 from services.redis_client import RedisHealthClient
 from size_rec.image_processing import ImageDownloadError, download_and_prepare_image
-from size_rec.mediapipe_service import MediaPipeService, PoseEstimationError
+from size_rec.mediapipe_service import MediaPipeService, ModelNotLoadedError, PoseEstimationError
 from size_rec.size_calculator import calculate_size_recommendation
 
 structlog.configure(processors=[structlog.processors.JSONRenderer()])
@@ -59,6 +59,9 @@ async def estimate_body(
     except ImageDownloadError as exc:
         log.warning('size_rec_image_download_failed', error=str(exc))
         raise HTTPException(status_code=400, detail='Invalid or inaccessible image URL') from exc
+    except ModelNotLoadedError as exc:
+        log.error('size_rec_model_not_loaded', error=str(exc))
+        raise HTTPException(status_code=503, detail='Pose estimation service is temporarily unavailable') from exc
     except PoseEstimationError as exc:
         log.warning('size_rec_pose_estimation_failed', error=str(exc))
         raise HTTPException(status_code=422, detail='Could not detect full body pose from image') from exc

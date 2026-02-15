@@ -1,4 +1,7 @@
+import ipaddress
+import socket
 from io import BytesIO
+from urllib.parse import urlparse
 
 import httpx
 import numpy as np
@@ -9,15 +12,35 @@ class ImageDownloadError(Exception):
     pass
 
 
+def _validate_url_not_internal(url: str) -> None:
+    """Reject URLs pointing to internal/private/loopback/link-local addresses."""
+    parsed = urlparse(url)
+    hostname = parsed.hostname
+    if not hostname:
+        raise ImageDownloadError('Invalid URL: no hostname')
+    try:
+        infos = socket.getaddrinfo(hostname, None, socket.AF_INET)
+        if not infos:
+            raise ImageDownloadError(f'Cannot resolve hostname: {hostname}')
+        ip = infos[0][4][0]
+        addr = ipaddress.ip_address(ip)
+        if addr.is_private or addr.is_loopback or addr.is_link_local or addr.is_reserved:
+            raise ImageDownloadError('URL resolves to a non-routable address')
+    except socket.gaierror as exc:
+        raise ImageDownloadError(f'Cannot resolve hostname: {hostname}') from exc
+
+
 async def download_and_prepare_image(
     image_url: str,
     timeout_seconds: float = 5.0,
     max_dimension_px: int = 512,
     max_content_length_mb: int = 10,
 ) -> np.ndarray:
+    _validate_url_not_internal(image_url)
+
     try:
         timeout = httpx.Timeout(timeout_seconds)
-        # LOW #3 FIX: Disable redirects to prevent SSRF amplification
+        # Disable redirects to prevent SSRF amplification
         async with httpx.AsyncClient(timeout=timeout, follow_redirects=False) as client:
             response = await client.get(image_url)
             response.raise_for_status()

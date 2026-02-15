@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 
 
 class GenerationTask(BaseModel):
@@ -19,3 +19,13 @@ class GenerationTask(BaseModel):
     request_id: str
     version: int = 1
     created_at: str
+
+    @model_validator(mode='after')
+    def validate_channel_ownership(self) -> 'GenerationTask':
+        if self.channel == 'b2b' and not self.store_id:
+            raise ValueError('b2b channel requires store_id')
+        if self.channel == 'b2c' and not self.user_id:
+            raise ValueError('b2c channel requires user_id')
+        if not self.image_urls:
+            raise ValueError('image_urls must not be empty')
+        return self

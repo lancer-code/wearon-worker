@@ -66,7 +66,12 @@ def main() -> None:
     finally:
         logger.info('shutting_down')
         celery_proc.terminate()
-        celery_proc.wait(timeout=10)
+        try:
+            celery_proc.wait(timeout=10)
+        except subprocess.TimeoutExpired:
+            logger.warn('celery_graceful_shutdown_timeout_force_killing')
+            celery_proc.kill()
+            celery_proc.wait()
         logger.info('worker_stopped')
 
 

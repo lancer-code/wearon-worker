@@ -81,8 +81,11 @@ async def generate_tryon(
                 raise OpenAIImageError('Rate limit exceeded', 429)
 
             if response.status_code == 400:
-                body = response.json()
-                error_code = body.get('error', {}).get('code', '')
+                try:
+                    body = response.json()
+                    error_code = body.get('error', {}).get('code', '')
+                except (ValueError, KeyError):
+                    error_code = ''
                 if error_code == 'moderation_blocked':
                     log.warn('openai_moderation_blocked')
                     raise OpenAIImageError(MODERATION_ERROR_MESSAGE, 400, is_moderation_error=True)
@@ -115,12 +118,14 @@ async def generate_tryon(
                 await asyncio.sleep(delay)
                 continue
             raise OpenAIImageError(f'API error: {exc}', status)
-        except Exception as exc:
+        except (httpx.TransportError, httpx.TimeoutException, ConnectionError, OSError) as exc:
             if attempt < max_retries:
                 delay = 2 ** attempt
-                log.warn('openai_error', error=str(exc), retry_delay=delay)
+                log.warn('openai_network_error', error=str(exc), retry_delay=delay)
                 await asyncio.sleep(delay)
                 continue
+            raise OpenAIImageError(f'Network error: {exc}')
+        except Exception as exc:
             raise OpenAIImageError(f'Unexpected error: {exc}')
 
     raise OpenAIImageError('Failed after all retries')

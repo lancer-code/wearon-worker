@@ -13,7 +13,7 @@ echo ""
 
 # 1. Check prerequisites
 echo "[1/8] Checking prerequisites..."
-for cmd in docker; do
+for cmd in docker python3; do
     if ! command -v "$cmd" &>/dev/null; then
         echo "ERROR: $cmd is not installed. Install it first."
         exit 1
@@ -30,16 +30,24 @@ echo "  Docker Compose $(docker compose version --short)"
 
 # 2. Create directory structure
 echo "[2/8] Creating ${DEPLOY_DIR}..."
-sudo mkdir -p "${DEPLOY_DIR}"
-sudo chown "$(id -u):$(id -g)" "${DEPLOY_DIR}"
+if [ "$(id -u)" -eq 0 ]; then
+    mkdir -p "${DEPLOY_DIR}"
+else
+    sudo mkdir -p "${DEPLOY_DIR}"
+    sudo chown "$(id -u):$(id -g)" "${DEPLOY_DIR}"
+fi
 
 # 3. Copy config files
 echo "[3/8] Copying configuration files..."
-cp "${SCRIPT_DIR}/docker-compose.prod.yml" "${DEPLOY_DIR}/"
-cp -r "${SCRIPT_DIR}/nginx" "${DEPLOY_DIR}/"
-cp -r "${SCRIPT_DIR}/monitoring" "${DEPLOY_DIR}/"
-cp -r "${SCRIPT_DIR}/scripts" "${DEPLOY_DIR}/"
-cp "${SCRIPT_DIR}/.env.example" "${DEPLOY_DIR}/.env.example"
+if [ "$(realpath "${SCRIPT_DIR}")" = "$(realpath "${DEPLOY_DIR}")" ]; then
+    echo "  Source and target are identical, skipping copy."
+else
+    cp "${SCRIPT_DIR}/docker-compose.prod.yml" "${DEPLOY_DIR}/"
+    cp -r "${SCRIPT_DIR}/nginx" "${DEPLOY_DIR}/"
+    cp -r "${SCRIPT_DIR}/monitoring" "${DEPLOY_DIR}/"
+    cp -r "${SCRIPT_DIR}/scripts" "${DEPLOY_DIR}/"
+    cp "${SCRIPT_DIR}/.env.example" "${DEPLOY_DIR}/.env.example"
+fi
 
 # 4. Create .env from template
 echo "[4/8] Setting up environment..."

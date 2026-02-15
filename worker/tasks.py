@@ -34,7 +34,24 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
     5. Update session to 'completed'
     On failure: refund credits, mark 'failed'
     """
-    task = GenerationTask(**task_data)
+    try:
+        task = GenerationTask(**task_data)
+    except Exception as exc:
+        logger.exception('task_payload_invalid', error=str(exc), raw_keys=list(task_data.keys()) if isinstance(task_data, dict) else 'not_a_dict')
+        # Attempt to mark session as failed if session_id is available
+        session_id = task_data.get('session_id') if isinstance(task_data, dict) else None
+        channel = task_data.get('channel') if isinstance(task_data, dict) else None
+        if session_id and channel in ('b2b', 'b2c'):
+            try:
+                supabase = get_supabase()
+                table = _get_session_table(channel)
+                supabase.table(table).update(
+                    {'status': 'failed', 'error_message': 'Invalid task payload'}
+                ).eq('id', session_id).execute()
+            except Exception:
+                logger.exception('task_payload_session_update_failed')
+        return
+
     log = logger.bind(
         request_id=task.request_id,
         session_id=task.session_id,
@@ -42,6 +59,12 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
     )
     supabase = get_supabase()
     session_table = _get_session_table(task.channel)
+
+    # Guard: skip if session was already cleaned up (e.g., by startup cleanup)
+    current = supabase.table(session_table).select('status').eq('id', task.session_id).execute()
+    if current.data and current.data[0].get('status') == 'failed':
+        log.info('session_already_failed_skipping')
+        return
 
     try:
         # 1. Mark as processing
