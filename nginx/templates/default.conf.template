@@ -6,14 +6,30 @@ upstream grafana_backend {
     server grafana:3000;
 }
 
+# HTTP — ACME challenge + redirect to HTTPS
 server {
     listen 80;
-    server_name _;
+    server_name ${DOMAIN};
 
-    # Certbot ACME challenge (for SSL in Story 3.2)
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+# HTTPS — SSL termination + reverse proxy
+server {
+    listen 443 ssl;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+    add_header Strict-Transport-Security "max-age=31536000" always;
 
     # Worker API endpoints
     location /health {
