@@ -1,6 +1,7 @@
 .PHONY: dev test build up down logs prod-up prod-down prod-logs prod-pull
 
 dev:
+	docker compose down --rmi local
 	docker compose up --build
 
 up:
