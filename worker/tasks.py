@@ -104,20 +104,20 @@ def process_generation(self, task_data: dict) -> None:  # type: ignore[no-untype
         else:
             storage_path = f'generated/{owner_id}/{task.session_id}.jpg'
 
-        supabase.storage.from_('images').upload(
+        supabase.storage.from_('virtual-tryon-images').upload(
             storage_path,
             result.image_bytes,
             {'content-type': 'image/jpeg'},
         )
 
         # Create signed URL (6 hour expiry)
-        signed = supabase.storage.from_('images').create_signed_url(storage_path, 21600)
+        signed = supabase.storage.from_('virtual-tryon-images').create_signed_url(storage_path, 21600)
         signed_url = signed.get('signedURL', '')
 
         # 5. Mark completed with usage data
         supabase.table(session_table).update({
             'status': 'completed',
-            'result_image_url': signed_url,
+            'generated_image_url': signed_url,
             'input_tokens': result.input_tokens,
             'output_tokens': result.output_tokens,
             'estimated_cost_usd': result.estimated_cost_usd,
