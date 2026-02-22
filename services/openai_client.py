@@ -16,6 +16,13 @@ MODERATION_ERROR_MESSAGE = (
     'Please use different images that comply with content guidelines.'
 )
 
+DEFAULT_TRYON_PROMPT = (
+    'Virtual try-on: model.jpg is the person photo and image_1.jpg is the clothing photo. '
+    'Dress the model in model.jpg with the clothing from image_1.jpg. '
+    'Maintain the model\'s original pose, body shape, skin tone, background, and lighting from model.jpg. '
+    'The clothing should fit naturally and look realistic.'
+)
+
 # GPT Image 1.5 pricing per 1M tokens (USD)
 _TEXT_INPUT_PRICE = 5.00
 _TEXT_OUTPUT_PRICE = 10.00
@@ -65,8 +72,8 @@ class OpenAIImageError(Exception):
 
 async def generate_tryon(
     image_buffers: list[tuple[str, bytes]],
-    prompt: str,
-    request_id: str,
+    prompt: str = '',
+    request_id: str = '',
     quality: str = 'medium',
     size: str = '1024x1536',
 ) -> GenerationResult:
@@ -85,6 +92,10 @@ async def generate_tryon(
     Raises:
         OpenAIImageError: On API errors including moderation blocks.
     """
+    prompt = prompt.strip() if prompt else ''
+    if not prompt:
+        prompt = DEFAULT_TRYON_PROMPT
+
     log = logger.bind(request_id=request_id)
     max_retries = settings.openai_max_retries
 

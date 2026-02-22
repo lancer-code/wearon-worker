@@ -7,7 +7,7 @@ from PIL import Image
 logger = structlog.get_logger()
 
 MAX_IMAGE_DIMENSION = 1024
-JPEG_QUALITY = 85
+JPEG_QUALITY = 75
 
 
 MAX_DOWNLOAD_SIZE_MB = 10
@@ -61,9 +61,17 @@ def resize_image(image_bytes: bytes, name: str) -> bytes:
     elif img.mode != 'RGB':
         img = img.convert('RGB')
 
+    # Strip EXIF metadata and optimize encoding to reduce file size
+    img.info.pop('exif', None)
     buf = io.BytesIO()
-    img.save(buf, format='JPEG', quality=JPEG_QUALITY)
-    return buf.getvalue()
+    img.save(buf, format='JPEG', quality=JPEG_QUALITY, optimize=True)
+    compressed = buf.getvalue()
+    logger.info(
+        'image_compressed',
+        name=name,
+        size_kb=round(len(compressed) / 1024, 1),
+    )
+    return compressed
 
 
 async def download_and_resize(url: str, name: str) -> bytes:
